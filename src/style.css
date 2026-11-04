@@ -1,0 +1,199 @@
+/* デジタルCDアルバム／デジタルシングルCDのスタイル。配色は「暗い固定」（世界観重視）。色は :root の変数に集約する。 */
+:root {
+  color-scheme: dark only;
+  /* iPhone の画面の上端は、システムがぼかす帯がある。文字がその帯に入らないよう、安全領域の上に余白を足す。
+     上端の余白は、env(safe-area-inset-top) だけにせず、この --safe-top を使う。 */
+  --top-gap: 24px;
+  --safe-top: calc(env(safe-area-inset-top) + var(--top-gap));
+  --indigo: #101a30;
+  --indigo2: #16233f;
+  --paper: #f5efe1;
+  --paper2: #efe6d2;
+  --ink: #2a2419;
+  --amber: #e8a33d;
+  --line: #c9bb9a;
+  --sub: #8b93a7;
+  /* テンプレート共通部品（バナー・ダイアログ・デバッグパネル）用の色 */
+  --surface: #182747;
+  --border: #33456e;
+  --text: #eef0f5;
+  --muted: #8b93a7;
+  --primary: #e8a33d;
+  --primary-text: #23180a;
+  --debug: #d29922;
+  --debug-text: #1f2328;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+/* display を指定した要素でも hidden 属性で確実に隠す */
+[hidden] { display: none !important; }
+
+html, body { height: 100%; overscroll-behavior: none; touch-action: manipulation; }
+body { background: var(--indigo); color: var(--text); font-family: "Hiragino Mincho ProN", "YuMincho", "Yu Mincho", serif; overflow-x: hidden; }
+button { font-family: inherit; cursor: pointer; }
+.view { display: none; height: 100dvh; min-height: 100dvh; flex-direction: column; overscroll-behavior: none; }
+.view.on { display: flex; }
+#view-cover, #view-tracks, #view-booklet { overflow-y: auto; }
+
+/* ---------- 表ジャケット ---------- */
+#view-cover { align-items: center; justify-content: flex-start; padding: var(--safe-top) 0 calc(40px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(13,20,38,.52), rgba(13,20,38,.80)), url("./album/assets/img/bg.jpg") center/cover no-repeat, var(--indigo); }
+.flip { position: relative; width: min(88vw, 480px); margin-top: 6px; perspective: 1400px; border-radius: 2px; box-shadow: 0 3px 8px rgba(0,0,0,.45), 0 26px 54px rgba(0,0,0,.55); }
+/* 置いてある質感: ジャケットの下に落ちる接地影 */
+.flip::after { content: ""; position: absolute; left: 5%; right: 5%; bottom: -34px; height: 40px; background: radial-gradient(50% 50% at 50% 50%, rgba(0,0,0,.6), rgba(0,0,0,0) 70%); filter: blur(7px); z-index: -1; pointer-events: none; }
+.flip-inner { position: relative; width: 100%; aspect-ratio: 1; transform-style: preserve-3d; transition: transform .7s cubic-bezier(.25,.7,.3,1); }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.flip .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; border-radius: 2px; }
+.flip .face.front { transform: translateZ(7px); }
+.flip .edge { position: absolute; top: 0; height: 100%; width: 14px; transform: rotateY(90deg); }
+.flip .edge-l { left: -7px; background: linear-gradient(90deg, #1f2742, #2c3757 50%, #1a2138); }
+.flip .edge-r { left: calc(100% - 7px); background: repeating-linear-gradient(90deg, #f0ead9 0 2px, #ddd5bf 2px 3px, #e9e2cf 3px 5px); }
+.flip .case { position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: 2px; box-shadow: inset 0 0 0 1px rgba(74,60,32,.35), inset 0 0 34px rgba(74,60,32,.10); }
+/* 紙の質感: 左上からの柔らかい光と、下端の落ち影 */
+.flip .case::before { content: ""; position: absolute; inset: 0; border-radius: 2px; background: linear-gradient(168deg, rgba(255,255,255,.13), rgba(255,255,255,0) 42%); }
+.flip .case::after { content: ""; position: absolute; inset: 0; border-radius: 2px; background: linear-gradient(0deg, rgba(0,0,0,.10), rgba(0,0,0,0) 30%); }
+.flip .face > img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.95) brightness(1.015); }
+.flip .face.back { transform: rotateY(180deg) translateZ(7px); background: #0d1526; }
+.flip .face.back .bc-list { position: absolute; inset: 0; overflow-y: auto; background: rgba(9,14,26,.68); padding: 6px 12px; }
+.flip .face.back .trow { padding: clamp(3px, 1.3vw, 7px) 4px; gap: 8px; }
+.flip .face.back .trow .nm { font-size: clamp(12px, 3.4vw, 14px); line-height: 1.3; }
+.flip .face.back .trow .no { font-size: 11px; width: 20px; }
+.flip .face.back .trow .tm { font-size: 11.5px; }
+.flip .face.back .trow .bonus { font-size: 9px; padding: 1px 5px; }
+.flip .face.back .trow { cursor: default; }
+.flip .face.back .trow .gn { display: none; }
+.album-title { margin-top: 26px; text-shadow: 0 2px 16px rgba(0,0,0,.65); font-size: clamp(24px, 6.4vw, 34px); letter-spacing: .06em; text-align: center; line-height: 1.5; }
+.album-sub { margin-top: 8px; color: var(--sub); font-size: 13px; letter-spacing: .28em; text-align: center; }
+.cover-actions { margin-top: 24px; display: flex; flex-direction: row; justify-content: center; align-items: flex-start; gap: 30px; width: 100%; }
+.cover-install { margin-top: 20px !important; }
+.abtn { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.abtn span { font-size: 11px; letter-spacing: .14em; color: #cfe0f5; text-shadow: 0 1px 8px rgba(0,0,0,.6); }
+.icon-btn { width: 58px; height: 58px; border-radius: 50%; border: 1px solid rgba(207,224,245,.45); background: rgba(13,20,38,.45); color: #e8eef7; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.icon-btn svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn.main svg { fill: currentColor; stroke: none; }
+.icon-btn:active { transform: scale(.95); }
+.btn { border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.06); color: #fff; padding: 14px 18px; border-radius: 999px; font-size: 16px; letter-spacing: .08em; }
+.btn.primary { background: var(--amber); border-color: var(--amber); color: #23180a; font-weight: 700; }
+.btn:active { transform: scale(.98); }
+.cover-note { margin-top: 22px; color: var(--sub); font-size: 12px; line-height: 1.9; text-align: center; }
+
+/* ---------- 共通ヘッダ ---------- */
+.bar { display: flex; align-items: center; gap: 10px; padding: calc(var(--safe-top) - 10px) 16px 14px; border-bottom: 1px solid rgba(255,255,255,.12); position: sticky; top: 0; background: var(--indigo); z-index: 5; }
+.bar .back { background: none; border: none; color: #fff; font-size: 15px; padding: 6px 8px; }
+.bar .ttl { font-size: 15px; letter-spacing: .12em; color: #dfe4ee; }
+
+/* ---------- 裏ジャケット（曲目） ---------- */
+#view-tracks { background: linear-gradient(180deg, #131f3a, #0d1526); align-items: center; }
+.backcover { padding: 10px 20px calc(30px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0; width: 100%; }
+.view-top { width: 100%; max-width: 560px; padding: calc(var(--safe-top) - 14px) 20px 0; }
+.backonly { background: none; border: none; color: #dfe8f5; font-size: 15px; padding: 8px 4px; cursor: pointer; font-family: inherit; letter-spacing: .06em; }
+.backcover h2 { font-size: 20px; letter-spacing: .08em; margin-bottom: 4px; }
+.backcover .bc-sub { color: var(--sub); font-size: 12px; letter-spacing: .2em; margin-bottom: 18px; }
+.trow { display: flex; align-items: baseline; gap: 12px; padding: 13px 6px; border-bottom: 1px dotted rgba(255,255,255,.22); cursor: pointer; }
+.trow:active { background: rgba(255,255,255,.05); }
+.trow .no { color: var(--amber); font-size: 13px; width: 26px; flex: none; }
+.trow .nm { flex: 1; font-size: 16px; line-height: 1.45; }
+.trow .gn { color: var(--sub); font-size: 11px; display: block; margin-top: 2px; letter-spacing: .05em; }
+.trow .tm { color: #c8cede; font-size: 13px; flex: none; }
+.trow .bonus { color: #0e1524; background: var(--amber); font-size: 10px; border-radius: 3px; padding: 2px 6px; margin-left: 8px; letter-spacing: .1em; vertical-align: 2px; }
+.bc-foot { margin-top: 20px; color: var(--sub); font-size: 11px; line-height: 1.9; }
+.bc-art { position: relative; border-radius: 4px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+.bc-art > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.bc-list { position: relative; background: rgba(9,14,26,.68); padding: 8px 14px; }
+.bc-list .trow:last-child { border-bottom: none; }
+
+/* ---------- ブックレット ---------- */
+#view-booklet { background: #0d1526; }
+.book-stage { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 18px 14px 8px; }
+.page { background: var(--paper); color: var(--ink); width: min(94vw, 520px); min-height: min(68dvh, 720px); border-radius: 3px; box-shadow: 0 16px 44px rgba(0,0,0,.5); padding: 28px 24px 34px; position: relative; user-select: none; -webkit-user-select: none; }
+.page h3 { font-size: 19px; letter-spacing: .06em; line-height: 1.6; margin-bottom: 12px; }
+.page h4 { font-size: 13px; letter-spacing: .24em; color: #8a6d2f; margin-bottom: 14px; }
+.page p { font-size: 14.5px; line-height: 2.05; margin-bottom: 12px; }
+.page .pimg { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 2px; margin-bottom: 16px; display: block; }
+.page .meta { color: #7a6c4d; font-size: 12px; letter-spacing: .08em; margin-bottom: 12px; }
+.page .lyrics { font-size: 12.5px; line-height: 1.95; color: #4c4433; white-space: pre-wrap; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+.page .folio { position: absolute; bottom: 12px; right: 16px; color: #a08d5f; font-size: 11px; letter-spacing: .15em; }
+.book-bar .ttl { position: absolute; left: 50%; transform: translateX(-50%); font-size: 13.5px; letter-spacing: .16em; color: #dfe4ee; white-space: nowrap; }
+.book-bar .bhome { margin-right: auto; width: 38px; height: 38px; flex: none; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.06); display: flex; align-items: center; justify-content: center; padding: 0; }
+.book-bar .bhome svg { width: 19px; height: 19px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.book-bar .bhome:active { transform: scale(.95); }
+.book-bar .pg { margin-left: auto; color: var(--sub); font-size: 12px; letter-spacing: .12em; white-space: nowrap; }
+.book-foot { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 16px calc(14px + env(safe-area-inset-bottom)); }
+.book-foot .version { font-size: 11px; letter-spacing: .12em; }
+
+/* ---------- 再生画面 ---------- */
+#view-player { background: linear-gradient(180deg, rgba(13,20,38,.55), rgba(13,20,38,.84)), url("./album/assets/img/bg.jpg") center/cover no-repeat, var(--indigo); overflow: hidden; }
+.player-main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: var(--safe-top) 18px calc(12px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; width: 100%; min-height: 0; }
+.disc-wrap { width: min(88vw, 480px); aspect-ratio: 1; position: relative; flex: none; }
+.disc-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; box-shadow: 0 3px 8px rgba(0,0,0,.45), 0 20px 46px rgba(0,0,0,.55); display: block; transition: border-radius .5s; }
+.disc-wrap.disc img { border-radius: 50%; animation: spin 14s linear infinite; }
+.disc-wrap.disc::after { content: ""; position: absolute; inset: 50% auto auto 50%; width: 15%; height: 15%; transform: translate(-50%,-50%); background: var(--indigo); border: 2px solid rgba(255,255,255,.65); border-radius: 50%; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.p-title { margin-top: 16px; font-size: 19px; text-align: center; line-height: 1.5; letter-spacing: .04em; width: 100%; white-space: nowrap; }
+.p-title .bonus-sfx { font-size: .76em; letter-spacing: .02em; }
+.p-genre { color: var(--sub); font-size: 12px; letter-spacing: .18em; margin-top: 5px; text-align: center; }
+.lyrics-wrap { flex: 1; min-height: 0; width: 100%; margin-top: 14px; position: relative; display: flex; overflow: hidden; }
+.lyrics-box { flex: 1; min-height: 0; width: 100%; overflow-y: auto; scroll-behavior: smooth; padding: 8px 12px 8px 4px; mask-image: linear-gradient(180deg, transparent, #000 12%, #000 82%, transparent); }
+.lyrics-bar { position: absolute; top: 6px; bottom: 6px; right: 1px; width: 4px; border-radius: 2px; background: rgba(255,255,255,.14); }
+.lyrics-thumb { position: absolute; left: 0; width: 100%; border-radius: 2px; background: rgba(255,255,255,.55); top: 0; height: 20%; }
+.lyrics-box p { font-size: 16.5px; line-height: 2.15; text-align: center; color: #a7aec4; cursor: default; transition: color .3s; }
+.lyrics-box p.cur { color: #fff; font-weight: 700; }
+.lyrics-box p.interlude { color: #565e75; font-size: 14px; }
+.controls { flex: none; width: 100%; padding: 10px 0 4px; }
+.seek { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--sub); }
+.seek input { flex: 1; accent-color: var(--amber); }
+.ctl-row { display: flex; align-items: flex-start; justify-content: center; gap: 15px; margin-top: 12px; }
+.ctl-row .icon-btn { width: 52px; height: 52px; }
+.ctl-row .icon-btn svg { width: 21px; height: 21px; }
+.ctl-row .abtn span { font-size: 10px; letter-spacing: .1em; }
+.ctl-row .tog { border: 1px solid rgba(255,255,255,.3); border-radius: 999px; font-size: 12px; padding: 8px 13px; color: #dfe4ee; letter-spacing: .06em; }
+.ctl-row .tog.on { background: rgba(232,163,61,.18); border-color: var(--amber); color: var(--amber); }
+.mini-note { text-align: center; color: var(--sub); font-size: 11px; margin-top: 8px; letter-spacing: .1em; }
+
+/* ---------- テンプレート共通部品（更新バナー・復旧・ダイアログ・デバッグ） ---------- */
+.muted { color: var(--muted); }
+.version { text-align: center; }
+button.link { border: 0; background: transparent; color: var(--amber); text-decoration: underline; display: block; margin: 4px auto 0; min-height: 44px; padding: 8px 12px; font-size: 13px; }
+.banner { position: fixed; left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 448px; margin: 0 auto; padding: 8px 8px 8px 16px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 6px 20px rgb(0 0 0 / .35); z-index: 40; font-size: 14px; }
+.banner__actions { display: flex; gap: 8px; flex-shrink: 0; }
+.banner button, .install-dialog button { font: inherit; color: inherit; min-height: 44px; padding: 8px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--indigo2); cursor: pointer; }
+.banner button.primary, .install-dialog button.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); font-weight: 700; }
+.boot-error small { display: block; color: var(--muted); }
+.install-dialog { width: min(448px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 16px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 16px; }
+.install-dialog::backdrop { background: rgb(0 0 0 / .5); }
+.install-dialog h2 { font-size: 1.1rem; margin: 0 0 4px; }
+.install-dialog details { border: 1px solid var(--border); border-radius: 12px; padding: 4px 12px; margin: 8px 0; }
+.install-dialog summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
+.install-dialog ol { margin: 0 0 8px; padding-left: 1.4em; }
+.install-dialog button { display: block; width: 100%; margin: 8px 0 0; }
+.debug-panel { position: fixed; left: max(8px, env(safe-area-inset-left)); bottom: max(8px, env(safe-area-inset-bottom)); z-index: 50; display: flex; align-items: center; gap: 6px; padding: 4px 6px; background: var(--surface); border: 2px solid var(--debug); border-radius: 10px; }
+.debug-panel__title { font-size: .7rem; font-weight: 700; color: var(--debug); letter-spacing: .08em; }
+.debug-panel__button { min-width: 44px; min-height: 44px; padding: 0 8px; background: var(--debug); border: 1px solid var(--debug); border-radius: 8px; color: var(--debug-text); cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ---------- シングル形態（8cmシングル短冊型ジャケット＋裏面パネル、ブックレットなし） ---------- */
+.layout-single .flip { width: min(78vw, 336px, max(200px, calc(51.6dvh - 112px))); margin-top: 10px; }
+.layout-single .flip-inner { aspect-ratio: 1 / 1.938; }
+/* 短冊ケースらしく: クリアケースの縁と斜めのツヤを強める */
+.layout-single .case { border-radius: 5px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.15), inset 0 0 26px rgba(255,255,255,.05), 0 24px 44px rgba(0,0,0,.5); }
+.layout-single .case::before { background: linear-gradient(112deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.03) 34%, rgba(255,255,255,0) 56%, rgba(255,255,255,.07) 84%, rgba(255,255,255,0) 100%); }
+.layout-single .flip .face.back .bc-list { display: none; }
+.layout-single .cover-actions { gap: 46px; }
+.layout-single .backcover .book-foot { margin-top: 28px; padding: 0; }
+/* 裏面パネル: 2曲のジャケット結合画像の上に、ライナーノート・曲目（長さ）・バージョンを載せる */
+.backnote { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 16px 15px 12px; color: #eef0f5; background: linear-gradient(180deg, rgba(7,10,16,.68), rgba(7,10,16,.80)); font-size: 12px; }
+.bn-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid rgba(255,255,255,.4); padding-bottom: 6px; margin-bottom: 9px; font-size: 10.5px; letter-spacing: .16em; color: #cfe0f5; }
+.bn-p { line-height: 1.9; margin-bottom: 8px; text-shadow: 0 1px 6px rgba(0,0,0,.65); }
+.bn-track { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 2px; border-bottom: 1px dotted rgba(255,255,255,.3); font-size: 13px; }
+.bn-track .no { color: var(--amber); font-size: 12px; width: 18px; flex: none; }
+.bn-track .nm { flex: 1; line-height: 1.4; }
+.bn-track .gn { display: block; color: var(--sub); font-size: 10.5px; letter-spacing: .05em; margin-top: 1px; }
+.bn-track .tm { color: #c8cede; font-size: 12px; flex: none; }
+.backnote .version { margin-top: auto; padding-top: 10px; font-size: 11px; letter-spacing: .12em; }
+/* リピート切替ボタン（1曲モードでバッジと枠を出す） */
+#btn-repeat { position: relative; }
+#btn-repeat.one { border-color: var(--amber); }
+.rep-one { position: absolute; top: 5px; right: 7px; font-size: 10px; font-weight: 700; color: var(--amber); line-height: 1; }

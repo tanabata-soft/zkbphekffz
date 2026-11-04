@@ -1,0 +1,1 @@
+{"compilerOptions":{"isolatedModules":true,"lib":["ES2022","DOM","DOM.Iterable"],"module":"ESNext","moduleResolution":"bundler","noEmit":true,"noFallthroughCasesInSwitch":true,"noUnusedLocals":true,"noUnusedParameters":true,"skipLibCheck":true,"strict":true,"target":"ES2022","types":["node","vite/client","vite-plugin-pwa/client"]},"include":["src","tests","vite.config.ts"]}
