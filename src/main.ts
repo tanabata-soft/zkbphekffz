@@ -15,6 +15,7 @@ import {
 import { exposeTestApi, setData, setupDebug } from './debug';
 import { setupInstallGuide } from './install';
 import { setupUpdateBanner } from './pwa';
+import { downloadAllAudio } from './download';
 
 const $ = <T extends HTMLElement>(s: string): T => {
   const el = document.querySelector(s);
@@ -533,6 +534,31 @@ exposeTestApi({
   },
 });
 setupUpdateBanner($('#update-banner'), $('#update-button'), $('#update-later'));
+// 初回一括ダウンロード（全音源を端末に入れる）。最初の表示が落ち着いてから裏で始める。
+{
+  const dlBanner = $('#dl-banner');
+  const dlLabel = $('#dl-label');
+  window.setTimeout(() => {
+    void downloadAllAudio(TRACK_AUDIO, (done, total) => {
+      if (dlBanner.hidden) {
+        dlBanner.hidden = false;
+        setData('downloading', '1');
+      }
+      dlLabel.textContent = `ダウンロード中… ${done}/${total}曲`;
+    }).then((result) => {
+      if (result === 'complete') {
+        dlLabel.textContent = 'ダウンロードが終わりました';
+        window.setTimeout(() => {
+          dlBanner.hidden = true;
+          setData('downloading', '0');
+        }, 1600);
+      } else {
+        dlBanner.hidden = true;
+        setData('downloading', '0');
+      }
+    });
+  }, 600);
+}
 const installButtons = ['#install-open', '#install-open-cover']
   .map((sel) => document.querySelector<HTMLButtonElement>(sel))
   .filter((b): b is HTMLButtonElement => b !== null);

@@ -9,6 +9,8 @@ const { version, name: appId } = JSON.parse(readFileSync(new URL('./package.json
 const APP_NAME = 'チョコミントの残像 ― デジタルシングルCD';
 const THEME_COLOR = '#0c1216';
 const BACKGROUND_COLOR = '#0c1216';
+// 音源の実行時キャッシュ名。src/download.ts（初回一括ダウンロード）も同じ名前を使う（define で埋め込む）。
+const AUDIO_CACHE = 'chocomint-single-audio';
 
 export default defineConfig({
   // GitHub Pages のサブパス配信でも動くよう、相対パスにする
@@ -19,6 +21,7 @@ export default defineConfig({
     // アプリの ID（package.json の name）。保存データのキー・バックアップの app 名・起動失敗の復旧の範囲に使う。
     // GitHub Pages では、すべてのアプリが同じサイトに載るので、アプリごとに別の名前にする。
     __APP_ID__: JSON.stringify(appId),
+    __AUDIO_CACHE__: JSON.stringify(AUDIO_CACHE),
   },
   plugins: [
     {
@@ -48,7 +51,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // 音源（mp4）は容量が大きいので事前キャッシュに入れず、再生時に実行時キャッシュへ（下の runtimeCaching）。
+        // 音源（mp4）は容量が大きいので事前キャッシュには入れない。初回起動時にアプリが
+        // 一括ダウンロードして実行時キャッシュへ入れる（src/download.ts）。再生時の取りこぼしもここで拾う。
         // 画像は表示に必須なので事前キャッシュに含める（大きめのジャケット画像に合わせて上限を引き上げる）。
         globPatterns: ['**/*.{js,css,html,svg,png,webp,jpg,webmanifest}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
@@ -58,7 +62,7 @@ export default defineConfig({
             urlPattern: /\.mp4($|\?)/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'chocomint-single-audio',
+              cacheName: AUDIO_CACHE,
               rangeRequests: true,
               cacheableResponse: { statuses: [0, 200] },
               expiration: { maxEntries: 4 },

@@ -158,6 +158,7 @@ button.link { border: 0; background: transparent; color: var(--amber); text-deco
 .banner__actions { display: flex; gap: 8px; flex-shrink: 0; }
 .banner button, .install-dialog button { font: inherit; color: inherit; min-height: 44px; padding: 8px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--indigo2); cursor: pointer; }
 .banner button.primary, .install-dialog button.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-text); font-weight: 700; }
+.dl-banner { justify-content: center; pointer-events: none; }
 .boot-error small { display: block; color: var(--muted); }
 .install-dialog { width: min(448px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; padding: 16px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 16px; }
 .install-dialog::backdrop { background: rgb(0 0 0 / .5); }
