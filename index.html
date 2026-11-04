@@ -116,7 +116,12 @@
     <!-- デバッグモードのときだけ出る操作（src/debug.ts。バージョンの表示を続けて 5 回タップで切り替え） -->
     <div id="debug-panel" class="debug-panel" hidden></div>
 
-    <!-- 新しい版があるときに出る。「更新」で切り替わる。「あとで」で閉じる（次に開いたとき、また出る） -->
+    <!-- 初回に全音源を一括ダウンロードしている間の表示（src/download.ts） -->
+  <div id="dl-banner" class="banner dl-banner" role="status" hidden>
+    <span id="dl-label">ダウンロード中…</span>
+  </div>
+
+  <!-- 新しい版があるときに出る。「更新」で切り替わる。「あとで」で閉じる（次に開いたとき、また出る） -->
     <div id="update-banner" class="banner" role="status" hidden>
       <span>更新があります</span>
       <div class="banner__actions">

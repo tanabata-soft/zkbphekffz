@@ -1,5 +1,22 @@
 import { expect, test } from '@playwright/test';
 
+test('初回に全音源が一括ダウンロードされ、キャッシュに揃う', async ({ page }) => {
+  await page.goto('/');
+  // 一括ダウンロードが終わると、音源キャッシュに2曲分が揃い、表示は消える
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(async () => {
+          const c = await caches.open('chocomint-single-audio');
+          return (await c.keys()).length;
+        }),
+      { timeout: 30_000 },
+    )
+    .toBe(2);
+  await expect(page.locator('#dl-banner')).toBeHidden();
+  await expect(page.locator('body')).toHaveAttribute('data-downloading', '0');
+});
+
 test('短冊ジャケットが開き、タップで裏面パネルに反転する', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#view-cover')).toBeVisible();
