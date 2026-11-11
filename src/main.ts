@@ -77,6 +77,19 @@ if (SINGLE) {
   vl.addEventListener('click', (e) => e.stopPropagation());
   panel.append(vl);
   $('.flip .face.back').append(panel);
+  // 裏面はスクロールなしで全面が収まるように、パネルの font-size を自動調整する
+  // （中身の寸法は style.css 側で em 連動。最小 6.5px まで縮める）オーナー指示 2026-11-12
+  const fitBacknote = (): void => {
+    let size = 12;
+    panel.style.fontSize = `${size}px`;
+    while (size > 6.5 && panel.scrollHeight > panel.clientHeight) {
+      size -= 0.5;
+      panel.style.fontSize = `${size}px`;
+    }
+  };
+  fitBacknote();
+  requestAnimationFrame(fitBacknote);
+  addEventListener('resize', fitBacknote);
   // インストール入口（残った .book-foot）は曲目画面の末尾へ移す
   const foot = document.querySelector('.book-foot');
   if (foot) $('.backcover').append(foot);
@@ -90,8 +103,8 @@ let currentView = 'cover';
 
 /* ---------- 画面遷移 ---------- */
 function go(name: string): void {
-  // シングル形態では、トップへ戻ったら曲を止める（オーナー指示 2026-11-04）
-  if (SINGLE && name === 'cover' && !audio.paused) audio.pause();
+  // トップへ戻っても再生は止めない（シングル・アルバム共通。オーナー指示 2026-11-12。
+  // 旧シングル仕様「トップへ戻ると止まる」2026-11-04 は廃止）
   currentView = name;
   document.querySelectorAll('.view').forEach((v) => v.classList.remove('on'));
   $(`#view-${name}`).classList.add('on');
@@ -108,7 +121,14 @@ if (!SINGLE)
     renderPage(0);
     go('booklet');
   });
-$('#btn-play-all').addEventListener('click', () => playTrack(0, true));
+$('#btn-play-all').addEventListener('click', () => {
+  // すでに再生中（または一時停止中）のときは、最初から再生し直さず再生画面へ戻るだけにする（オーナー指示 2026-11-05）
+  if (cur >= 0 && !audio.ended) {
+    go('player');
+    return;
+  }
+  playTrack(0, true);
+});
 if (!SINGLE) $('#btn-open-tracks').addEventListener('click', () => go('tracks'));
 
 /* ---------- 曲目（裏ジャケット） ---------- */
@@ -350,9 +370,38 @@ function lyrInteractEnd(): void {
 }
 const lyrBoxEl = $('#lyrics-box');
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
-lyrBoxEl.addEventListener('pointerdown', lyrInteractStart);
+/* ---------- 歌詞タップでその行から再生（スクロール操作とは競合させない） ---------- */
+let lyrDownX = 0;
+let lyrDownY = 0;
+let lyrDownScrollTop = 0;
+lyrBoxEl.addEventListener('pointerdown', (e) => {
+  lyrDownX = e.clientX;
+  lyrDownY = e.clientY;
+  lyrDownScrollTop = lyrBoxEl.scrollTop;
+  lyrInteractStart();
+});
 lyrBoxEl.addEventListener('pointerup', lyrInteractEnd);
 lyrBoxEl.addEventListener('pointercancel', lyrInteractEnd);
+lyrBoxEl.addEventListener('click', (e) => {
+  const p = (e.target as HTMLElement).closest('p');
+  if (!p || !lyrBoxEl.contains(p)) return;
+  // 押してからドラッグした（指・カーソルの移動が大きい、または実際にスクロールした）場合は
+  // スクロール操作とみなしてシークしない
+  const moved = Math.max(Math.abs(e.clientX - lyrDownX), Math.abs(e.clientY - lyrDownY));
+  if (moved > 10 || Math.abs(lyrBoxEl.scrollTop - lyrDownScrollTop) > 1) return;
+  const t = Number(p.dataset.t ?? '0');
+  if (!Number.isFinite(t)) return;
+  // シークするタップでは、自由スクロールの保留（3秒で再生位置へ戻る）を解除して選んだ行へ寄せる
+  if (lyrTimer) {
+    clearTimeout(lyrTimer);
+    lyrTimer = null;
+  }
+  lyrHold = false;
+  audio.currentTime = t;
+  audio.play().catch(() => {});
+  syncLyrics();
+  scrollLyricsToCurrent(true);
+});
 lyrBoxEl.addEventListener(
   'wheel',
   () => {

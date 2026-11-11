@@ -184,16 +184,18 @@ button.link { border: 0; background: transparent; color: var(--amber); text-deco
 .layout-single .flip .face.back .bc-list { display: none; }
 .layout-single .cover-actions { gap: 46px; }
 .layout-single .backcover .book-foot { margin-top: 28px; padding: 0; }
-/* 裏面パネル: 2曲のジャケット結合画像の上に、ライナーノート・曲目（長さ）・バージョンを載せる */
-.backnote { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 16px 15px 12px; color: #eef0f5; background: linear-gradient(180deg, rgba(7,10,16,.68), rgba(7,10,16,.80)); font-size: 12px; }
-.bn-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid rgba(255,255,255,.4); padding-bottom: 6px; margin-bottom: 9px; font-size: 10.5px; letter-spacing: .16em; color: #cfe0f5; }
-.bn-p { line-height: 1.9; margin-bottom: 8px; text-shadow: 0 1px 6px rgba(0,0,0,.65); }
-.bn-track { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 2px; border-bottom: 1px dotted rgba(255,255,255,.3); font-size: 13px; }
-.bn-track .no { color: var(--amber); font-size: 12px; width: 18px; flex: none; }
+/* 裏面パネル: 2曲のジャケット結合画像の上に、ライナーノート・曲目（長さ）・バージョンを載せる。
+   スクロールさせずに全面が収まるのが決まり（オーナー指示 2026-11-12）。中身の寸法はすべて em で
+   パネルの font-size に連動させ、main.ts の fitBacknote が画面サイズごとに font-size を調整する。 */
+.backnote { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; overflow: hidden; padding: 1.3em 1.25em 1em; color: #eef0f5; background: linear-gradient(180deg, rgba(7,10,16,.68), rgba(7,10,16,.80)); font-size: 12px; }
+.bn-head { display: flex; justify-content: space-between; align-items: baseline; gap: .7em; border-bottom: 1px solid rgba(255,255,255,.4); padding-bottom: .5em; margin-bottom: .75em; font-size: .88em; letter-spacing: .16em; color: #cfe0f5; }
+.bn-p { line-height: 1.9; margin-bottom: .65em; text-shadow: 0 1px 6px rgba(0,0,0,.65); }
+.bn-track { display: flex; justify-content: space-between; align-items: baseline; gap: .8em; padding: .55em .15em; border-bottom: 1px dotted rgba(255,255,255,.3); font-size: 1.08em; }
+.bn-track .no { color: var(--amber); font-size: 1em; width: 1.4em; flex: none; }
 .bn-track .nm { flex: 1; line-height: 1.4; }
-.bn-track .gn { display: block; color: var(--sub); font-size: 10.5px; letter-spacing: .05em; margin-top: 1px; }
-.bn-track .tm { color: #c8cede; font-size: 12px; flex: none; }
-.backnote .version { margin-top: auto; padding-top: 10px; font-size: 11px; letter-spacing: .12em; }
+.bn-track .gn { display: block; color: var(--sub); font-size: .85em; letter-spacing: .05em; margin-top: .1em; }
+.bn-track .tm { color: #c8cede; font-size: 1em; flex: none; }
+.backnote .version { margin-top: auto; padding-top: .8em; font-size: .92em; letter-spacing: .12em; }
 /* リピート切替ボタン（1曲モードでバッジと枠を出す） */
 #btn-repeat { position: relative; }
 #btn-repeat.one { border-color: var(--amber); }
