@@ -21,6 +21,7 @@
 
 ## 今の状態
 
+- v1.0.12 公開記録: PR #6 を squash マージ（merge commit 2540a5f2958b1e55e074ef6a87bdc5b23fc5781b）、ブランチ update/nk-s001-v1.0.12 は削除済み。GitHub Pages 再デプロイ成功、https://tanabata-soft.github.io/zkbphekffz/ は HTTP 200、配信中 JS に version 1.0.12 が含まれることを確認済み。CI の check は通過（e2e も通過。ローカル e2e 18件通過済み）。
 - v1.0.12（2026-11-12）: 新挙動3点を反映（オーナー指示 2026-11-12、NK-S007 v1.0.3 の実機確認OKを受けたもの）。(1) 裏面パネルをスクロールなしで収める自動調整（fitBacknote、テンプレート commit 388e9b1 と同一実装）。(2) 再生中にトップへ戻っても再生を止めない（commit 555543d と同一。旧仕様「トップへ戻ると止まる」2026-11-04 は廃止）。あわせてトップの再生ボタンも 2026-11-05 ルール（再生中なら再生中の曲の画面へ戻る）の実装に更新（旧作は1曲目から再生し直す実装だった）。(3) 歌詞タップでその行から再生（commit 38b215d と同一実装。タップ判定は移動量10pxとスクロール量）。e2e に裏面フィット／タップシーク／ドラッグではシークしないテストを追加し、トップへ戻るテストを新挙動に置き換え。
 - デジタルシングルCD『チョコミントの残像』(NK-S001)。PWA テンプレート構成(Vite + TypeScript + vite-plugin-pwa)。公開は GitHub Actions → GitHub Pages(リポジトリ `tanabata-soft/zkbphekffz`)、URL は https://tanabata-soft.github.io/zkbphekffz/ 。
 - エンジンはデジタルCDアルバム(NK-001 `tanabata-soft/d3dk4hgn9m`)と共通。作品データは `src/album/` に集約され、エンジンはそこだけを参照する。
