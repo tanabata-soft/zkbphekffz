@@ -34,7 +34,7 @@ for (const [re, label] of [
   [/rel="apple-touch-icon"/, 'apple-touch-icon'],
   [/viewport-fit=cover/, 'viewport-fit=cover'],
 ]) need(re.test(html), `index.html に ${label} がありません`);
-need(/id="install-open"/.test(html) && /id="install-dialog"/.test(html), '最初の画面にインストール説明の入口（#install-open と #install-dialog）がありません');
+need(/id="install-open-cover"/.test(html) && /id="install-dialog"/.test(html), '最初の画面にインストール説明の入口（#install-open-cover と #install-dialog）がありません');
 need(/id="version"/.test(html), '最初の画面にバージョン表示（#version）がありません');
 need(existsSync(join(dist, 'boot.js')) && /<script src="boot.js">/.test(html) && /id="boot-error"/.test(html) && /id="boot-repair"/.test(html), '起動失敗時の復旧（boot.js と #boot-error / #boot-repair）がありません');
 // アプリの ID（package.json の name）。GitHub Pages では、すべてのアプリが同じサイトに載り、

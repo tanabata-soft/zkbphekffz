@@ -29,6 +29,7 @@
       <div class="cover-actions">
         <div class="abtn"><button class="icon-btn" id="btn-open-tracks" aria-label="曲目"><svg viewBox="0 0 24 24"><path d="M8.5 6h12M8.5 12h12M8.5 18h12"/><circle cx="4" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.2" fill="currentColor" stroke="none"/></svg></button><span>曲目</span></div>
         <div class="abtn"><button class="icon-btn main" id="btn-play-all" aria-label="全曲再生"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><span>再生</span></div>
+        <div class="abtn"><button class="icon-btn" id="btn-open-game" aria-label="リズムゲームで遊ぶ"><svg viewBox="0 0 24 24"><path d="M9 18.5V7l10-2v11.5"/><circle cx="6.5" cy="18.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg></button><span>遊ぶ</span></div>
         <div class="abtn"><button class="icon-btn" id="btn-open-booklet" aria-label="ブックレット"><svg viewBox="0 0 24 24"><path d="M12 6.2C10.2 4.7 7.8 4.2 4 4.2v13.6c3.8 0 6.2.5 8 2 1.8-1.5 4.2-2 8-2V4.2c-3.8 0-6.2.5-8 2z"/><path d="M12 6.2v13.6"/></svg></button><span>ブックレット</span></div>
       </div>
       <button id="install-open-cover" type="button" class="link cover-install">📲 アプリとしてインストールする方法</button>
@@ -47,9 +48,8 @@
     <section id="view-booklet" class="view">
       <div class="bar book-bar"><button class="bhome" data-go="cover" aria-label="トップに戻る"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7"/><path d="M6.5 9.5V20h11V9.5"/></svg></button><span class="ttl" id="book-ttl">ブックレット</span><span class="pg" id="pg-ind"></span></div>
       <div class="book-stage"><article class="page" id="book-page"></article></div>
-      <!-- バージョン表示とインストール入口は、カバー画面を汚さないよう奥付のあるブックレットの末尾に置く（CLAUDE.md の方針参照） -->
+      <!-- バージョン表示は、カバー画面を汚さないよう奥付のあるブックレットの末尾に置く（CLAUDE.md の方針参照）。インストール入口はトップ画面のみ（オーナー指示 2026-11-21） -->
       <div class="book-foot">
-        <button id="install-open" type="button" class="link">📲 アプリとしてインストールする方法</button>
         <p class="muted version" id="version-line">デジタルシングルCD v<span id="version"></span></p>
       </div>
     </section>
@@ -76,9 +76,159 @@
       </div>
     </section>
 
+    <section id="view-game" class="view">
+      <div class="menu-bg" id="menu-bg" aria-hidden="true"></div>
+      <div class="game-main">
+        <!-- メニュー画面 -->
+        <div id="menu-screen">
+          <header class="brand">
+            <div class="brand-top">
+              <p class="brand-en" aria-hidden="true">RHYTHM GAME</p>
+            </div>
+            <h1><b>リズムゲーム</b></h1>
+          </header>
+
+          <!-- 曲選択はジャケット主役のカルーセル（左右スワイプ／スクロールで切り替え）。
+               スライドは src/game/game-main.ts が曲データから組み立てる -->
+          <section class="carousel" aria-label="曲を選ぶ">
+            <div id="carousel-viewport" class="carousel-viewport">
+              <div id="carousel-track" class="carousel-track"></div>
+            </div>
+            <button id="carousel-prev" type="button" class="carousel-nav carousel-prev" aria-label="前の曲">‹</button>
+            <button id="carousel-next" type="button" class="carousel-nav carousel-next" aria-label="次の曲">›</button>
+            <div id="carousel-dots" class="carousel-dots" role="group" aria-label="曲の位置"></div>
+          </section>
+
+          <!-- ベストスコアは難易度の上に専用の領域で出す（ランク＋スコア。オーナー指示 2026-11-20） -->
+          <div class="best-panel" id="best-panel">
+            <span class="best-rank none" id="menu-best-rank">—</span>
+            <div class="best-meta">
+              <p class="best-label" id="menu-best-label">ベストスコア</p>
+              <p class="best-score" id="menu-best">0</p>
+            </div>
+          </div>
+
+          <div class="row diff-row" id="diff-row" role="group" aria-label="難易度">
+            <button type="button" class="opt" data-diff="easy" aria-pressed="true">かんたん</button>
+            <button type="button" class="opt" data-diff="normal" aria-pressed="false">ふつう</button>
+            <button type="button" class="opt" data-diff="hard" aria-pressed="false">むずかしい</button>
+          </div>
+
+          <button id="start-button" type="button" class="primary go">スタート</button>
+          <p id="start-status" class="muted" role="status"></p>
+
+          <footer class="menu-footer">
+            <button type="button" class="settings-open game-back" data-go="cover">戻る</button>
+            <button id="settings-open" type="button" class="settings-open" aria-haspopup="dialog" aria-controls="settings-dialog"><span aria-hidden="true">⚙</span> 設定</button>
+          </footer>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <div id="game-screen" hidden>
+          <canvas id="game-canvas"></canvas>
+          <!-- 歌詞（3行: 前／今／次）。タップは透過させる -->
+          <div id="lyrics" class="lyrics" aria-hidden="true">
+            <p class="lyric-line lyric-prev" id="lyric-prev"></p>
+            <p class="lyric-line lyric-current" id="lyric-current"></p>
+            <p class="lyric-line lyric-next" id="lyric-next"></p>
+          </div>
+          <!-- ノーツ専用キャンバス: 歌詞より手前に音符を出すため、本体キャンバスから
+               ノーツとヒット演出だけを分離して歌詞の上に重ねる（オーナー指示 2026-11-20）。
+               タップは透過させ、本体キャンバス側の判定に委ねる -->
+          <canvas id="notes-canvas" aria-hidden="true"></canvas>
+          <!-- コンボの節目で登場するコンボ演出のセリフ（NK-S003 では素材スロットが空のため出ない） -->
+          <div id="combo-pop" class="combo-pop" hidden aria-hidden="true">
+            <p class="combo-bubble" id="combo-line"></p>
+            <p class="combo-count"><span id="combo-num">30</span> COMBO</p>
+          </div>
+          <!-- 結果は別画面にせず、終わった演奏画面の上にカードを重ねて出す（オーナー指示 2026-11-20）。
+               フルコンボの締め演出も別に出さず、このカードの中の印に統合した（同日指示） -->
+          <section id="result-screen" class="card result" hidden aria-live="polite">
+            <p id="result-gameover" class="gameover-badge" hidden>GAME OVER</p>
+            <p class="rank" id="result-rank">S</p>
+            <p id="result-autoplay" class="autoplay-badge" hidden>オートプレイ</p>
+            <p id="result-fullcombo" class="fullcombo-badge" hidden>FULL COMBO!</p>
+            <p id="result-newrecord" class="newrecord-badge" hidden>ハイスコア更新！</p>
+            <p id="result-song"></p>
+            <p>スコア <span id="result-score"></span>（ベスト <span id="result-best"></span>）</p>
+            <p id="result-counts"></p>
+            <p>精度 <span id="result-accuracy"></span>%　最大コンボ <span id="result-combo"></span></p>
+            <div class="row">
+              <button id="again-button" type="button" class="opt">もう一度</button>
+              <button id="next-button" type="button" class="opt">次の曲</button>
+              <button id="back-button" type="button" class="opt">メニューへ</button>
+            </div>
+          </section>
+          <!-- 中断の確認カード（演奏を凍結して出す。NK-001 v1.2.7 で標準化） -->
+          <section id="pause-screen" class="card result pause" hidden aria-live="polite">
+            <p class="pause-title">演奏を中断しますか？</p>
+            <p class="pause-note">スコアは記録されません</p>
+            <div class="row">
+              <button id="pause-resume-button" type="button" class="opt">つづける</button>
+              <button id="pause-retry-button" type="button" class="opt">はじめからやりなおす</button>
+              <button id="pause-abort-button" type="button" class="opt danger">メニューに戻る</button>
+            </div>
+          </section>
+          <p id="game-live" class="sr-only" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <!-- 設定（メニュー下部の設定ボタンから開く） -->
+      <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+        <div class="dialog-head">
+          <h2 id="settings-title">設定</h2>
+          <button id="settings-close" type="button" class="dialog-close" aria-label="設定を閉じる">✕</button>
+        </div>
+
+        <h3 class="sub-title">遊び方</h3>
+        <p class="note">ノーツが下の枠に重なったらタップ。長い帯は終わるまで押しっぱなし（パソコンは D / F / J / K）。矢印の形のノーツは、指を上へはじくフリックで取ります（パソコンは通常のキー押しで取れます）。演奏は左上のボタンで中断できます。</p>
+
+        <h3 class="sub-title">タイミング調整（オフセット）</h3>
+        <div class="offset-row">
+          <button type="button" id="offset-minus" aria-label="オフセットを10ms減らす">−</button>
+          <span id="offset-value" aria-live="polite">0ms</span>
+          <button type="button" id="offset-plus" aria-label="オフセットを10ms増やす">＋</button>
+        </div>
+        <p class="note">ノーツが遅れて感じる → ＋ ／ 早く感じる → −。Bluetoothイヤホンのときは ＋ が目安です。</p>
+        <button id="latency-open" type="button" class="dialog-close-wide" aria-haspopup="dialog" aria-controls="latency-dialog">遅延チェック</button>
+        <p class="note">拍の音と光に合わせてタップすると、タイミングのずれを測ってオフセットに反映できます。</p>
+
+        <h3 class="sub-title">音符の速度</h3>
+        <div class="offset-row">
+          <button type="button" id="speed-minus" aria-label="音符の速度を下げる">−</button>
+          <span id="speed-value" aria-live="polite">×1.0</span>
+          <button type="button" id="speed-plus" aria-label="音符の速度を上げる">＋</button>
+        </div>
+        <p class="note">ノーツが落ちる速さです。×1.0 がいままでの速さで、数字が大きいほど速く落ちます（×0.8〜×2.0、0.1刻み）。</p>
+
+        <div class="toggle-row">
+          <span>振動</span>
+          <button id="vibrate-button" type="button" class="toggle" aria-label="振動" aria-pressed="true"><span class="toggle-state">オン</span></button>
+        </div>
+        <p class="note">振動は、対応している端末（Android など）だけで働きます。</p>
+
+        <!-- 確認用の自動演奏は、バージョン表示の5回タップで出るパネル側に移した（オーナー指示 2026-11-20） -->
+      </dialog>
+
+      <!-- 遅延チェック（設定モーダルから開く。拍に合わせてタップし、ずれを測ってオフセットに反映する） -->
+      <dialog id="latency-dialog" class="settings-dialog latency-dialog" aria-labelledby="latency-title">
+        <div class="dialog-head">
+          <h2 id="latency-title">遅延チェック</h2>
+          <button id="latency-close" type="button" class="dialog-close" aria-label="遅延チェックを閉じる">✕</button>
+        </div>
+        <p class="note">拍の音に合わせてタップしてください。6回タップすると、ずれを測って自動でオフセットに反映します。</p>
+        <div id="latency-flash" class="latency-flash" aria-hidden="true"></div>
+        <p id="latency-status" class="latency-status" aria-live="polite">タップ 0 / 6</p>
+        <button id="latency-tap" type="button" class="latency-tap" disabled>タップ</button>
+        <div id="latency-result" class="latency-result" hidden>
+          <p class="latency-result-text"><strong id="latency-mean">+0ms</strong> に合わせました</p>
+        </div>
+      </dialog>
+    </section>
+
     <audio id="audio" preload="metadata"></audio>
 
-    <!-- インストール方法（ブックレット末尾の入口から開く） -->
+    <!-- インストール方法（トップ画面の入口から開く） -->
     <dialog id="install-dialog" class="install-dialog" aria-labelledby="install-title">
       <h2 id="install-title">ホーム画面に追加して使う</h2>
       <p class="muted">インストールすると、ホーム画面から開けて、オフラインでも使えます。</p>
