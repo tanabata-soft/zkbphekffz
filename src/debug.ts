@@ -63,6 +63,24 @@ export interface DebugAction {
   run(): void;
 }
 
+// ---- パネルへの操作の追加登録 ----
+// setupDebug を呼ぶ側（CD の殻）以外の部品（リズムゲーム側など）が、自分の操作を
+// 同じパネルに足すための入口。基本の操作の後ろに並ぶ。
+
+const extraActions: DebugAction[] = [];
+let renderPanel: (() => void) | null = null;
+
+/** パネルへ操作を足す。登録した時点でパネルを描き直す */
+export function registerDebugActions(actions: DebugAction[]): void {
+  extraActions.push(...actions);
+  renderPanel?.();
+}
+
+/** パネルの表示を今の状態で描き直す（トグル類のラベル更新に使う） */
+export function refreshDebugPanel(): void {
+  renderPanel?.();
+}
+
 /**
  * デバッグモードをつなぐ。trigger（バージョンの表示）を続けて DEBUG_TAPS 回タップすると切り替わり、
  * オンのあいだだけ panel に actions のボタンと「終了」を出す。onChange は切り替わったときに呼ぶ。
@@ -74,6 +92,7 @@ export function setupDebug(panel: HTMLElement, trigger: HTMLElement, actions: De
     onChange?.(value);
   };
   const render = (): void => {
+    renderPanel = render;
     panel.hidden = !on;
     panel.replaceChildren();
     if (!on) return;
@@ -81,7 +100,7 @@ export function setupDebug(panel: HTMLElement, trigger: HTMLElement, actions: De
     title.className = 'debug-panel__title';
     title.textContent = 'DEBUG';
     panel.append(title);
-    for (const a of [...actions, { label: '終了', title: 'デバッグモードを終える', run: () => toggle(false) }]) {
+    for (const a of [...actions, ...extraActions, { label: '終了', title: 'デバッグモードを終える', run: () => toggle(false) }]) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'debug-panel__button';

@@ -1,0 +1,1067 @@
+/* リズムゲームのスタイル。リズムゲームエンジン（mmishina-art/rhythm-game-engine v1.0.0）の
+   src/style.css を、CD アプリ内に同居させるため機械的に変換したもの
+   （NK-S003 で実働した版を、デジタルCDエンジンのモジュールとして取り込んだ）:
+   - 全セレクタを #view-game 配下にスコープ（:root の変数は #view-game に移設）
+   - @keyframes 名には -g 接尾辞を付けて CD 側と衝突させない
+   - body / html / main の土台ルールと、移植しない部品（バナー・インストール・
+     デバッグパネル・boot）のルールは除いた（main は .game-main に読み替え）
+   エンジン側の style.css を更新したら、この変換をやり直すこと。 */
+
+/* 色は :root の変数に集約する（色の直書きをしない）。
+   配色方針: 暗い固定（ジャケット絵の深い紺〜ネオンピンクの世界観に合わせる）。 */#view-game {
+  color-scheme: dark only;
+  /* iPhone の画面の上端は、システムがぼかす帯がある。文字がその帯に入らないよう、安全領域の上に余白を足す。
+     上端の余白は、env(safe-area-inset-top) だけにせず、この --safe-top を使う（simple_chess などで起きた症状への対応）。 */
+  --top-gap: 24px;
+  --safe-top: calc(env(safe-area-inset-top) + var(--top-gap));
+  --bg: #0b0e1d;
+  --surface: #171b31;
+  --surface-2: #1f2440;
+  --text: #f2f0fa;
+  --muted: #a7a3c0;
+  --border: #343a5e;
+  --primary: #ff4d8d;
+  /* 選んでいる曲のテーマ色（game-main が曲ごとに差し替える。既定は --primary と同じピンク） */
+  --song-accent-rgb: 255 77 141;
+  --primary-2: #7c4dff;
+  --primary-text: #ffffff;
+  --accent: #39d0ff;
+  --gold: #ffd166;
+  --debug: #d29922;
+  --debug-text: #1f2328;
+}
+
+#view-game * {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  /* タップ・長押しで文字選択やコールアウト（iPhone の長押しメニュー）が出ないようにする。
+     選択が必要な入力欄はこのアプリには無い */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* display を指定した要素でも hidden 属性で確実に隠す */#view-game [hidden] {
+  display: none !important;
+}
+
+#view-game {
+  background: #05060a;
+}
+
+/* メニューの背景: 選んでいる曲のジャケットをぼかして全面に敷く（オーナー承認の見た目 2026-11-20）。
+   中身（.game-main）より後ろに置き、ゲーム画面（position: fixed）が開けば隠れる */
+#view-game .menu-bg {
+  position: fixed;
+  inset: -48px;
+  z-index: 0;
+  background-size: cover;
+  background-position: center 22%;
+  filter: blur(34px) saturate(1.3) brightness(0.5);
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+#view-game .menu-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(5 6 12 / 0.38), rgb(5 6 12 / 0.3) 45%, rgb(5 6 12 / 0.66));
+}
+
+#view-game .game-main {
+  position: relative;
+  z-index: 1;
+  /* CD 側の .view は flex column。margin の auto があると flex の stretch が効かず、
+     幅が max-width の 480px に張り付いて、480px 未満の画面で横にはみ出していた
+     （実機で判明、v1.2.2 で修正）。width: 100% で画面幅に合わせ、広い画面では
+     max-width で抑えて auto マージで中央に置く */
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  /* iPhone のノッチ・ホームバーを避ける */
+  padding: max(16px, var(--safe-top)) max(16px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  /* 一画面に収めるため、高さは .view（100dvh）いっぱいにして縦の flex にする。
+     中身の調整は #menu-screen 側（カルーセルだけが縮む） */
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* メニュー画面は縦の flex。画面の高さが足りないときはカルーセルだけが縮み、
+   ほかの部品（題字・ベストスコア・難易度・スタート・フッター）は元の大きさで
+   一画面に収まる（v1.2.2。#view-game の overflow-y: auto は保険として残る） */
+#view-game #menu-screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+#view-game #menu-screen > * {
+  flex: 0 0 auto;
+}
+
+#view-game #menu-screen > .carousel {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+/* ブランド表示（ポスターの題字）。左寄せの細字＋グラデーションの短い罫（オーナー承認の見た目 2026-11-20） */#view-game .brand {
+  text-align: left;
+  margin: 4px 0 14px;
+}
+
+/* 題字の上の行: 英字ロゴを左に置く（設定ボタンは画面下部のフッターにある） */#view-game .brand-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 24px;
+}
+
+#view-game .brand-en {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  color: #67e8f9;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
+}
+
+/* メニュー下部のフッター（設定と「戻る」を横並びにする） */#view-game .menu-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 28px;
+}
+
+/* 設定・戻るボタン（メニュー下部のフッター）。文字だけでは押せる見た目に
+   ならないため、控えめな面と枠でボタンらしくする。スタート（ピンクの
+   ネオン輪郭）とは見た目の系統を変える（オーナー指示 2026-11-20） */
+#view-game .settings-open {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 18px;
+  min-height: 48px;
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.06);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  color: #dfe3f0;
+  white-space: nowrap;
+}
+
+#view-game .settings-open:active {
+  background: rgb(255 255 255 / 0.13);
+}
+
+#view-game h1 {
+  font-size: 1.7rem;
+  font-weight: 300;
+  margin: 8px 0 0;
+  letter-spacing: 0.28em;
+  text-shadow: 0 2px 14px rgb(0 0 0 / 0.5);
+}
+
+#view-game h1 b {
+  font-weight: 700;
+}
+
+/* 題字の下のグラデーションの短い罫 */
+#view-game h1::after {
+  content: '';
+  display: block;
+  width: 44px;
+  height: 2px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, var(--primary), rgb(var(--song-accent-rgb) / 0.35));
+  box-shadow: 0 0 12px rgb(var(--song-accent-rgb) / 0.8);
+}
+
+#view-game .section-title {
+  font-size: 0.95rem;
+  margin: 16px 0 8px;
+  color: var(--text);
+}
+
+#view-game .sub-title {
+  font-size: 0.9rem;
+  margin: 16px 0 8px;
+  color: var(--text);
+}
+
+/* 曲選択カルーセル（v1.9.3）: ジャケットを主役にした左右スワイプ式。
+   ビューポートは横スクロール＋スナップで、中央のスライドが選択中の曲。
+   隣のジャケットが両端に少し見える幅（74%）にする */#view-game .carousel {
+  position: relative;
+  margin-top: 6px;
+  /* 縦の flex: 高さが足りないときはビューポート側が縮む（一画面に収める v1.2.2） */
+  display: flex;
+  flex-direction: column;
+}
+
+#view-game .carousel-viewport {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  padding: 10px 0 14px;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+#view-game .carousel-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+#view-game .carousel-track {
+  display: flex;
+  gap: 14px;
+  /* ビューポートが縮んだときはトラックも一緒に縮み、スライドがその高さに付く */
+  height: 100%;
+}
+
+/* 先頭と末尾のスライドも中央に来られるよう、両端にスペーサーを置く。
+   以前はトラックの padding 13% で賄っていたが、padding の % はビューポート幅基準、
+   スライドの flex-basis 74% はトラックの内容幅基準で、両端では中心がずれていた
+   （オーナー指摘 2026-11-20）。スペーサーなら両方ともトラック内容幅基準で揃う */
+#view-game .carousel-track::before,
+#view-game .carousel-track::after {
+  content: '';
+  flex: 0 0 13%;
+}
+
+#view-game .carousel-slide {
+  position: relative;
+  flex: 0 0 74%;
+  scroll-snap-align: center;
+  margin: 0;
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+  opacity: 0.5;
+  transform: scale(0.94);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+#view-game .carousel-slide[data-active='true'] {
+  opacity: 1;
+  transform: none;
+  border-color: rgb(var(--song-accent-rgb) / 0.45);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 14px 44px rgb(var(--song-accent-rgb) / 0.22),
+    0 24px 60px rgb(0 0 0 / 0.7);
+}
+
+/* ジャケットは縦長（4/5）の切り抜き。正方形の絵は横だけが切り取られ、
+   上下は全部見える。切り取る側は、絵の中の曲タイトルが収まる側に寄せる
+   （タイトルが左にある絵は左寄せ、中央の絵は中央寄せ）。曲ごとに違う場合は
+   下のように [data-song='<id>'] で上書きする */#view-game .carousel-slide img {
+  display: block;
+  width: 100%;
+  /* 高さが決まっているとき（画面が低くてカルーセルが縮んだとき）は枠いっぱいに
+     敷いて object-fit で切り取る。決まっていないときは aspect-ratio が効く */
+  height: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 50% 50%;
+}
+
+/* 例: タイトルが左端にある曲は左寄せにする
+.carousel-slide[data-song='<曲ID>'] img {
+  object-position: 0% 50%;
+}
+*/#view-game .slide-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 44px 14px 10px;
+  background: linear-gradient(to top, rgb(5 6 18 / 0.94) 30%, rgb(5 6 18 / 0.55) 65%, transparent);
+  pointer-events: none;
+}
+
+#view-game .slide-title {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: var(--primary-text);
+  text-shadow:
+    0 0 10px rgb(var(--song-accent-rgb) / 0.9),
+    0 0 26px rgb(var(--song-accent-rgb) / 0.55),
+    0 2px 6px rgb(0 0 0 / 0.6);
+}
+
+#view-game .slide-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+/* カルーセルの前後ボタン（ジャケットの左右に重ねる） */#view-game .carousel-nav {
+  position: absolute;
+  top: 38%;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  background: rgb(11 14 29 / 0.72);
+  border-color: rgb(255 255 255 / 0.35);
+}
+
+#view-game .carousel-nav:disabled {
+  opacity: 0.3;
+}
+
+#view-game .carousel-prev {
+  left: 2px;
+}
+
+#view-game .carousel-next {
+  right: 2px;
+}
+
+/* 位置を示すドット */#view-game .carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+#view-game .carousel-dot {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+#view-game .carousel-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.28);
+}
+
+#view-game .carousel-dot[aria-current='true']::after {
+  background: var(--primary);
+  box-shadow: 0 0 10px rgb(var(--song-accent-rgb) / 0.8);
+}
+
+#view-game .chip {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  padding: 1px 9px;
+  border-radius: 999px;
+  border: 1px solid rgb(255 255 255 / 0.35);
+  background: rgb(11 14 29 / 0.55);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ボーナストラックのチップ（CD 側の裏面バッジと同じ金色） */
+#view-game .chip.bonus-chip {
+  background: var(--gold);
+  border-color: transparent;
+  color: #1a1405;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+#view-game .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 8px 16px 20px;
+  margin-top: 16px;
+}
+
+#view-game .muted {
+  color: var(--muted);
+}
+
+#view-game .note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+#view-game .version {
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+/* タップ領域は 44px 以上 */#view-game button {
+  font: inherit;
+  color: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 20px;
+  margin: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+#view-game button.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-text);
+  font-weight: 700;
+}
+
+#view-game button:disabled {
+  opacity: 0.6;
+}
+
+#view-game .row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#view-game .opt {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 4px;
+  white-space: nowrap;
+}
+
+#view-game .opt[aria-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+  font-weight: 700;
+}
+
+/* 難易度は下線タブ。選択中は白＋太字＋アクセント色の下線（オーナー承認の見た目 2026-11-20） */#view-game .diff-row {
+  margin-top: 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  gap: 0;
+}
+
+#view-game .diff-row .opt {
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  letter-spacing: 0.18em;
+  padding-bottom: 9px;
+  box-shadow: none;
+}
+
+#view-game .diff-row .opt[aria-pressed='true'] {
+  background: transparent;
+  border-bottom: 2px solid var(--primary);
+  box-shadow: 0 12px 14px -12px rgb(var(--song-accent-rgb) / 0.9);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* スタートは縁だけ光る輪郭ボタン（オーナー承認の見た目 2026-11-20）。
+   button.primary（塗りつぶし）より優先させるため要素名まで含めたセレクタにする */
+#view-game button.go {
+  display: block;
+  width: 100%;
+  margin-top: 22px;
+  padding: 15px;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
+  color: var(--primary);
+  border: 1px solid rgb(var(--song-accent-rgb) / 0.75);
+  border-radius: 999px;
+  background: rgb(5 6 12 / 0.3);
+  box-shadow:
+    0 0 22px rgb(var(--song-accent-rgb) / 0.28),
+    inset 0 0 18px rgb(var(--song-accent-rgb) / 0.1);
+}
+
+#view-game .howto {
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* 曲の選択は上のカルーセル（.carousel）が担う *//* 設定カードの中のオン/オフトグル（スイッチ風） */#view-game .toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+#view-game .toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 92px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+#view-game .toggle .toggle-state {
+  pointer-events: none;
+}
+
+#view-game .toggle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 6px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: var(--muted);
+  transition: left 0.15s ease, background 0.15s ease;
+}
+
+#view-game .toggle[aria-pressed='true'] {
+  border-color: var(--primary);
+  background: linear-gradient(120deg, rgb(var(--song-accent-rgb) / 0.35), rgb(var(--song-accent-rgb) / 0.18));
+  color: var(--primary-text);
+  /* オンではツマミが右に来るので、状態の文字は左に置く（ツマミに隠れないように） */
+  text-align: left;
+}
+
+#view-game .toggle[aria-pressed='true']::before {
+  left: calc(100% - 36px);
+  background: var(--primary);
+  box-shadow: 0 0 10px rgb(var(--song-accent-rgb) / 0.8);
+}
+
+/* ベストスコアは曲選択画面の難易度の上に、専用の領域で出す。
+   罫線だけの帯＋輪郭だけの金ランク（オーナー承認の見た目 2026-11-20。設定には置かない。
+   BEST のタグは「ベストしか出ないので不要」とのオーナー指摘で付けない） */
+#view-game .best-panel {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgb(5 6 12 / 0.3);
+  border-top: 1px solid rgb(255 255 255 / 0.22);
+  border-bottom: 1px solid rgb(255 255 255 / 0.22);
+  padding: 10px 8px;
+  margin: 12px 0 10px;
+}
+
+/* ランクは金の塗りつぶし（オーナー指示 2026-11-20。当初は輪郭だけだった） */
+#view-game .best-rank {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--gold);
+  min-width: 2.7rem;
+  text-align: center;
+}
+
+#view-game .best-rank.none {
+  color: rgb(255 255 255 / 0.35);
+}
+
+#view-game .best-meta {
+  text-align: left;
+}
+
+#view-game .best-label {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+#view-game .best-score {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+#view-game .offset-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#view-game .offset-row button {
+  width: 52px;
+  height: 48px;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+#view-game .offset-row span {
+  min-width: 84px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* ゲーム画面（全画面 Canvas） */#view-game #game-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 10;
+  /* 親要素でもタッチ操作をブラウザに渡さない（スクロール・ズーム・選択の抑止） */
+  touch-action: none;
+}
+
+/* 広い画面（PC など）では、プレイ画面をスマホ比率（390:844）のステージにして
+   中央に置く（オーナー決定 2026-11-21「案B：スマホ比率のまま拡大」）。
+   レーン幅もノーツの落下距離も、比率までスマホと一致させる。余白は単色
+   （#view-game の背景）で、ステージには薄い影を付けて区切る。
+   幅 480px 以下（スマホ縦持ち）では今まで通り全画面のまま */
+@media (min-width: 481px) {
+  #view-game #game-screen {
+    margin: auto;
+    width: min(100vw, calc(100dvh * 390 / 844));
+    height: min(100dvh, calc(100vw * 844 / 390));
+    box-shadow: 0 0 64px rgb(0 0 0 / 0.65);
+  }
+
+  /* ステージの外（余白）にメニューのぼかし背景を出さない。
+     game-main.ts が選曲のたびに style.opacity を直接書くので、!important で勝つ */
+  #view-game:has(#game-screen:not([hidden])) .menu-bg {
+    opacity: 0 !important;
+  }
+
+  /* 歌詞はジャケット（ステージ幅いっぱいの正方形）のすぐ下に出す。
+     ステージ幅は高さ × 390/844 なので、top はステージ高さに対する比率で表す
+     （46.2085% = 390/844）。基本ルール（.lyrics の top）より後ろで勝つよう、
+     セレクタは #game-screen 経由で強めてある */
+  #view-game #game-screen .lyrics {
+    top: calc(46.2085% + 10px);
+  }
+}
+
+#view-game #game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ノーツ専用キャンバス（歌詞より手前。タップは透過し、本体キャンバスが受ける） */#view-game #notes-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 歌詞（3行）。ジャケット（画面幅いっぱいの正方形）のすぐ下に出す。
+   横長画面では正方形の一辺は画面の高さになるので、min() で追随する。タップは透過。
+   下敷き（帯の背景）は置かない（オーナー指示 2026-11-20）: 背景はほぼ黒で文字の
+   影だけで読め、下敷きがあると後ろを流れる音符が隠れてしまう。音符は専用
+   キャンバスで歌詞より手前に描かれる */#view-game .lyrics {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: calc(min(100vw, 100dvh) + 10px);
+  padding: 8px 10px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 4;
+}
+
+#view-game .lyric-line {
+  margin: 0;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.9), 0 0 2px rgb(0 0 0 / 0.9);
+  transition: opacity 0.25s;
+}
+
+/* 歌詞は3行表示（前／今／次。5行も試したがオーナー判断で3行に戻した
+   2026-11-20）。文字の大きさは CD 側の通常再生の歌詞（16.5px）を起点に、
+   演奏画面の表示物は全体的にもう少し大きくする（同日指示）。現在行は
+   約19.5px、前後の行は通常再生の本文相当（16.5px） */
+#view-game .lyric-prev,
+#view-game .lyric-next {
+  font-size: 1.03rem;
+  color: var(--muted);
+  opacity: 0.55;
+}
+
+#view-game .lyric-current {
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+#view-game .lyric-current.pop {
+  animation: lyric-pop-g 0.3s ease-out;
+}
+
+@keyframes lyric-pop-g {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+/* コンボ演出の登場（コンボの節目）: 絵は Canvas の背景に敷かれる（game.ts が描く。
+   ピーク不透明度 1.0 で背景が完全に置き換わる）。
+   ここはセリフとコンボ数だけを、画面上部中央の控えめな表示で出す。タップは透過。
+   上端は Canvas が描くスコア行（〜34px）に重ならない位置にし、
+   下部の歌詞（.lyrics）とも重ならない。滞在時間は main.ts の COMBO_SHOW_MS /
+   COMBO_SHOW_BIG_MS と合わせる */#view-game .combo-pop {
+  position: absolute;
+  top: calc(var(--safe-top) + 52px);
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* 出現中はフェードイン→静止→フェードアウトを 1 本のアニメーションで通す。
+   包絡は game.ts の背景（フェードイン 0.9秒 → キープ → フェードアウト 0.8秒、
+   v1.9.1 でふわっとさせた）と合わせる:
+   通常 3.7秒（24.3% でイン完了、78.4% からアウト）、big 4.4秒（20.5% / 81.8%）。
+   区間ごとに ease-in-out をかけ、game.ts 側の smoothstep と似た柔らかさにする */#view-game .combo-pop.show {
+  animation: combo-fade-g 3.7s ease-in-out forwards;
+}
+
+#view-game .combo-pop.big.show {
+  animation-name: combo-fade-big-g;
+  animation-duration: 4.4s;
+}
+
+@keyframes combo-fade-g {
+  0% {
+    opacity: 0;
+  }
+  24.3% {
+    opacity: 0.97;
+  }
+  78.4% {
+    opacity: 0.97;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes combo-fade-big-g {
+  0% {
+    opacity: 0;
+  }
+  20.5% {
+    opacity: 0.97;
+  }
+  81.8% {
+    opacity: 0.97;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* セリフは半透明の暗いピル型の帯に入れて、背景の絵の上でも読めるようにする */#view-game .combo-bubble {
+  display: inline-block;
+  margin: 0;
+  padding: 5px 14px;
+  background: rgb(0 0 0 / 0.55);
+  color: var(--text);
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+
+#view-game .combo-pop.big .combo-bubble {
+  font-size: 1.02rem;
+}
+
+#view-game .combo-count {
+  margin: 0;
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  text-shadow: 0 2px 6px rgb(0 0 0 / 0.9);
+}
+
+#view-game .combo-pop.big .combo-count {
+  font-size: 1.65rem;
+}
+
+
+#view-game .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* 中断の確認カード（結果カードと同じ重ね方。オーナー指示 2026-11-21、案1） */
+#view-game .pause .pause-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 10px 0 4px;
+}
+
+#view-game .pause .pause-note {
+  color: var(--muted, #9aa3b2);
+  font-size: 0.9rem;
+  margin: 0 0 10px;
+}
+
+#view-game .pause .opt.danger {
+  color: #ff8f8f;
+  border-color: rgb(255 143 143 / 0.45);
+}
+
+/* ボタンが3つに増えた（v1.4.13「はじめからやりなおす」追加）ため、中断カードでは
+   1行目に「つづける／はじめからやりなおす」、2行目に「メニューに戻る」を回す。
+   横1列だとスマホ幅で文言がはみ出すための措置 */
+#view-game .pause .opt {
+  flex: 1 1 40%;
+  font-size: 0.92rem;
+}
+
+/* 結果は別画面にせず、終わった演奏画面の上に重ねて出す（オーナー指示 2026-11-20）。
+   カードの後ろは大きな影で全面を薄暗くし、演奏画面が透けて見える */#view-game .result {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92%, 420px);
+  margin: 0;
+  z-index: 8;
+  text-align: center;
+  box-shadow:
+    0 0 0 100vmax rgb(4 6 12 / 0.55),
+    0 18px 50px rgb(0 0 0 / 0.5);
+}
+
+#view-game .result .rank {
+  font-size: 5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--gold);
+  margin: 12px 0 4px;
+}
+
+/* ゲームオーバー（ライフが尽きた失敗）の印。ランク文字の上に赤く大きく出す */
+#view-game .result .gameover-badge {
+  margin: 10px 0 0;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #ff5252;
+}
+
+#view-game .result p {
+  margin: 6px 0;
+}
+
+/* フルコンボの印は結果カードの中に出す（別画面の締め演出は廃止。オーナー指示 2026-11-20） */
+#view-game .result .fullcombo-badge {
+  display: inline-block;
+  margin: 2px 0 6px;
+  padding: 4px 16px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #231a04;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  box-shadow: 0 0 18px rgb(255 209 102 / 0.45);
+}
+
+/* ハイスコア更新の印。フルコンボ（金）と並んでも見分けられるよう、色はアクセント（水色）で形は同じピルにする */
+#view-game .result .newrecord-badge {
+  display: inline-block;
+  margin: 2px 0 6px;
+  padding: 4px 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #06222e;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 18px rgb(57 208 255 / 0.45);
+}
+
+/* オートプレイで演奏した回の印（ベストスコアに残らないことを見せる） */#view-game .result .autoplay-badge {
+  display: inline-block;
+  margin: 2px 0 6px;
+  padding: 3px 14px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  color: var(--gold);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #view-game * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* 設定のダイアログ（インストール方法と同じ体裁で、世界観の色に合わせる）。
+   全体リセット（* { margin: 0 }）で dialog 標準の margin: auto が消え、
+   左寄せになっていたため、明示してセンタリングする（オーナー指示 2026-11-20） */#view-game .settings-dialog {
+  margin: auto;
+  width: min(448px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid rgb(var(--song-accent-rgb) / 0.45);
+  border-radius: 16px;
+  box-shadow: 0 0 28px rgb(var(--song-accent-rgb) / 0.25);
+}
+
+#view-game .settings-dialog::backdrop {
+  background: rgb(3 4 12 / 0.65);
+}
+
+#view-game .dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#view-game .dialog-head h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+#view-game .dialog-close {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1rem;
+}
+
+#view-game .dialog-close-wide {
+  display: block;
+  width: 100%;
+  margin: 16px 0 0;
+}
+
+
+/* 遅延チェックの画面（設定モーダルの上に重ねて開く） */#view-game .latency-flash {
+  width: 96px;
+  height: 96px;
+  margin: 18px auto 6px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+}
+
+#view-game .latency-flash.on {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 36px rgb(255 209 102 / 0.8);
+}
+
+#view-game .latency-status {
+  text-align: center;
+  color: var(--muted);
+  margin: 8px 0;
+}
+
+#view-game .latency-tap {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  margin: 10px 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  border-radius: 16px;
+}
+
+#view-game .latency-result {
+  text-align: center;
+  margin: 10px 0;
+}
+
+#view-game .latency-result-text {
+  margin: 6px 0 10px;
+}
+
+/* ---------- CD 側へ同居させるための調整（エンジン側） ---------- */
+/* .view（CD 側）は height: 100dvh の flex。リズムゲーム画面は中をスクロールさせる */
+#view-game {
+  overflow-y: auto;
+  background:
+    radial-gradient(120% 55% at 88% -4%, rgb(var(--song-accent-rgb) / 0.22), transparent 60%),
+    radial-gradient(110% 50% at -8% 12%, rgb(124 77 255 / 0.18), transparent 55%),
+    var(--bg);
+  font-family: system-ui, -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+}
+
+/* 上部の戻る導線は置かない（トップへはメニュー下部の「戻る」ボタン）ので、
+   .game-main の上余白で安全領域ぶんを取る */
+#view-game .game-main {
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+
+/* 設定モーダルを開いている間は、背面のスクロールを止める（エンジン側の body ルールの移植） */
+body.dialog-open {
+  overflow: hidden;
+}
+
+/* カルーセルの寄せ（曲ごと）は CSS ではなく曲データの slidePosition で指定する
+   （game-main.ts が img の object-position に直接設定する。作品データは songs.ts） */

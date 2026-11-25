@@ -62,7 +62,7 @@ export const checks = [
       const n = [...data.matchAll(/src: '([^']+)'/g)].length;
       const media = read(root, 'src/album/media.ts');
       const imgs = [...media.matchAll(/from '\.\/assets\/img\/track\d+\.jpg'/g)].length;
-      const audios = [...media.matchAll(/from '\.\/assets\/audio\/track\d+\.mp4'/g)].length;
+      const audios = [...media.matchAll(/from '\.\/assets\/audio\/track\d+\.mp3'/g)].length;
       const errors = [];
       if (imgs !== n) errors.push(`曲の画像が ${imgs} 件で、曲数 ${n} と違います`);
       if (audios !== n) errors.push(`曲の音源が ${audios} 件で、曲数 ${n} と違います`);
